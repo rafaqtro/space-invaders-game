@@ -298,6 +298,11 @@
 (define (next-missile m)
   (make-missile (missile-x m) (- (missile-y m) MISSILE-SPEED)))
 
+;; Missile ListOfinvaders -> Boolean
+;; produce true if missile hit to one invader on LOI
+;; !!!
+(define (missile-hit? m loi) false)
+
 ;; Tank -> Tank
 ;; move the tank TANK_SPEED per pixel to lef if (= dir-tank -1) or right if (= dir-tank 1)
 (check-expect (next-tank (make-tank  50  1)) (make-tank (+  50 TANK-SPEED)  1))
