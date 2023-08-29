@@ -300,8 +300,46 @@
 
 ;; Missile ListOfinvaders -> Boolean
 ;; produce true if missile hit to one invader on LOI
-;; !!!
-(define (missile-hit? m loi) false)
+(check-expect (missile-hit-loi? (make-missile 30 100) empty) false)
+(check-expect (missile-hit-loi? (make-missile 30 100) (list (make-invader 30  50 1))) false)
+(check-expect (missile-hit-loi? (make-missile 30 100) (list (make-invader 30  90 1)))  true)
+(check-expect (missile-hit-loi? (make-missile 30 100) (list (make-invader 40 100 1) (make-invader 50 80 1))) true)
+(check-expect (missile-hit-loi? (make-missile 30 100) (list (make-invader 30 110 1) (make-invader 50 80 1))) true)
+(check-expect (missile-hit-loi? (make-missile 50 100) (list (make-invader 40 100 1) (make-invader 50 80 1))) true)
+
+;(define (missile-hit-loi? m loi) false) ;stub
+
+(define (missile-hit-loi? m loi)
+  (cond [(empty? loi) false]
+        [else 
+         (or (hit-invader? m (first loi))
+             (missile-hit-loi?  m (rest loi)))]))
+
+;; Missile Invader -> Boolean
+;; produce true if missile hit invader
+(check-expect (hit-invader? (make-missile 30  40) (make-invader 20 100 1)) false)
+(check-expect (hit-invader? (make-missile 30 100) (make-invader 40 100 1)) true)
+(check-expect (hit-invader? (make-missile 30 100) (make-invader 30  90 1)) true)
+(check-expect (hit-invader? (make-missile 30 100) (make-invader 40 100 1)) true)
+(check-expect (hit-invader? (make-missile 50 100) (make-invader 40 100 1)) true)
+
+;(define (hit-invader? m i) false) ;stub
+
+(define (hit-invader? m i)
+  (<= 0 (distance m i) 10))
+
+;; Missile Invader -> Number
+;; caculate the distance between the center of missile-image (xm,ym) and invader-image(xi, yi)
+(check-within (distance (make-missile 30 40) (make-invader 20 100 1))
+              (sqrt (+ (sqr (- 20 30)) (sqr (- 100 40)))) 1)
+(check-within (distance (make-missile 30 100) (make-invader 40 100 1))
+              (sqrt (+ (sqr (- 40 30)) (sqr (- 100 100)))) 1)
+
+;(define (distance m i) 0); stub
+
+(define (distance m i)
+  (sqrt (+ (sqr (- (invader-x i) (missile-x m))) (sqr (- (invader-y i) (missile-y m))))))
+
 
 ;; Tank -> Tank
 ;; move the tank TANK_SPEED per pixel to lef if (= dir-tank -1) or right if (= dir-tank 1)
