@@ -6,7 +6,6 @@
 
 ;; Space Invaders
 
-
 ;; Constants:
 
 (define WIDTH  300)
@@ -39,8 +38,6 @@
 (define TANK-Y (- HEIGHT TANK-HEIGHT/2))
 (define MISSILE (ellipse 5 15 "solid" "red"))
 
-
-
 ;; Data Definitions:
 
 (define-struct game (invaders missiles tank))
@@ -55,7 +52,6 @@
   (... (fn-for-loinvader (game-invaders s))
        (fn-for-lom (game-missiles s))
        (fn-for-tank (game-tank s))))
-
 
 
 (define-struct tank (x dir))
@@ -81,7 +77,6 @@
 (define I1 (make-invader 150 100 1))           ;not landed, moving right 12
 (define I2 (make-invader 150 HEIGHT -1))       ;exactly landed, moving left -10
 (define I3 (make-invader 150 (+ HEIGHT 10) 1)) ;> landed, moving right 10
-
 
 #;
 (define (fn-for-invader invader)
@@ -164,18 +159,23 @@
                                (make-missile 150 (- 110 MISSILE-SPEED)))
                          (make-tank (+ 50 TANK-SPEED) 1)))
           
-                      
- 
+                     
 ;(define (tock game) game) ;stub
 
 ;<template used from game>
 
+#;
 (define (tock game)
   (make-game (next-loinvader (game-invaders game))
              (next-lom (game-missiles game))
              (next-tank (game-tank game))))
 
-;; ListOfInvaders -> ListOfInvaders
+(define (tock game)
+  (make-game (next-loinvader (game-invaders game) (game-missiles game))
+             (next-lom (game-missiles game))
+             (next-tank (game-tank game))))
+
+;; ListOfInvaders ListOfMissile -> ListOfInvaders
 ;; produce the next state of each invaders in the list
 ;; advanced on x INVADER-X-SPEED  pixel to left if (invader-dx i) is -1 or
 ;; to right if (invader-dx i) is 1
@@ -183,39 +183,75 @@
 ;; if hit the wall they will bounce off and continue in the other direction
 ;; hit right wall go to left
 ;; hit left wall go to right
-(check-expect (next-loinvader empty) empty) 
-(check-expect (next-loinvader (list (make-invader 20 100 1) (make-invader 30  250 1)))        
+;; if invader collision with missile invader dissapear(removed from the list)
+(check-expect (next-loinvader empty empty) empty)
+(check-expect (next-loinvader (list (make-invader 20 30 1)) empty)
+              (list (make-invader (+ 20 INVADER-X-SPEED) (+ 3 INVADER-Y-SPEED) 1)))
+
+(check-expect (next-loinvader (list (make-invader 20 100 1) (make-invader 30  250 1)) empty)        
               (list (make-invader (+ 20 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) 1)         ;middle
                     (make-invader (+ 30 INVADER-X-SPEED) (+ 250 INVADER-Y-SPEED) 1)))
 
-(check-expect (next-loinvader (list (make-invader 50 200 1) (make-invader 30 (- HEIGHT 10)  1)))
+(check-expect (next-loinvader (list (make-invader 50 200 1) (make-invader 30 (- HEIGHT 10)  1))
+                              (list (make-missile 20 300)))
               (list (make-invader (+ 50 INVADER-X-SPEED) (+ 200 INVADER-Y-SPEED) 1)
                     (make-invader (+ 30 INVADER-X-SPEED) (+ (- HEIGHT 10) INVADER-Y-SPEED) 1)))      ;reach bottom
-(check-expect (next-loinvader (list (make-invader 20 100 -1) (make-invader 30  150 -1)))        
+(check-expect (next-loinvader (list (make-invader 20 100 -1) (make-invader 30  150 -1))
+                              (list (make-missile 20 300)))        
               (list (make-invader (- 20 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) -1)                     ;to left
                     (make-invader (- 30 INVADER-X-SPEED) (+ 150 INVADER-Y-SPEED) -1)))
 (check-expect (next-loinvader (list (make-invader 20 100 1)
-                                    (make-invader (- WIDTH (/ (image-width INVADER) 2)) 150 1)))
+                                    (make-invader (- WIDTH (/ (image-width INVADER) 2)) 150 1))
+                              (list (make-missile 20 300)))
               (list (make-invader (+ 20 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) 1)                   ; reach right wall
                     (make-invader (-  (- WIDTH (/ (image-width INVADER) 2)) INVADER-X-SPEED)
                                   (+ 150 INVADER-Y-SPEED) -1)))
 
 (check-expect (next-loinvader (list (make-invader 20 100 1)
-                                    (make-invader (+ (- WIDTH (/ (image-width INVADER) 2)) 2) 150 1)))
+                                    (make-invader (+ (- WIDTH (/ (image-width INVADER) 2)) 2) 150 1))
+                              (list (make-missile 30 400)))
               (list (make-invader (+ 20 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) 1)                   ; pass right wall
                     (make-invader (- (+ (- WIDTH (/ (image-width INVADER) 2)) 2) INVADER-X-SPEED)
                                   (+ 150 INVADER-Y-SPEED) -1)))
-                              
+(check-expect (next-loinvader (list (make-invader 50 200 1)) (list (make-missile 40 200)))     ; collison missile invader
+              empty)
+
+(check-expect (next-loinvader (list (make-invader 50 200 1) (make-invader 20 100 1)) (list (make-missile 50 210)))
+              (list (make-invader 20 100 1)))
+
+(check-expect (next-loinvader (list (make-invader 50 200 1) (make-invader 20 100 1))  
+                              (list (make-missile 50 210) (make-missile 18 102)))        ;double collision
+                              empty)
 
 ;(define (next-loinvader loi) empty) ;stub
 
 ;<template took from LOI>
 
-(define (next-loinvader loi)
+(define (next-loinvader loi lom)
   (cond [(empty? loi) empty]
-        [else 
-         (cons (next-invader (first loi))
-               (next-loinvader (rest loi)))]))
+        [else
+         (if (invader-fired? (first loi) lom)
+             ;(next-invader (first (update-loi (first loi) loi)))
+             (next-loinvader (rest loi) lom)
+             (cons (next-invader (first loi))
+                   (next-loinvader (rest loi) lom)))]))
+
+;; Invader ListOfMissile ->  Boolean
+;; produce true if invader has a collison with some missile on lom (fired)
+(check-expect (invader-fired? (make-invader 50 200 1) empty) false)
+(check-expect (invader-fired? (make-invader 20 200 -1) (list (make-missile 20 100))) false)
+(check-expect (invader-fired? (make-invader 20 200 1) (list (make-missile 20 190))) true)
+(check-expect (invader-fired? (make-invader 20 100 1) (list (make-missile 20 190) (make-missile 20 95))) true)
+(check-expect (invader-fired? (make-invader 20 100 1) (list (make-missile 20 190) (make-missile 20 25))) false)
+
+;(define (invader-fired? i lom) false) ;stub
+
+(define (invader-fired? i lom)
+  (cond [(empty? lom) false]
+        [else
+         (if (hit-invader? (first lom) i)
+             true
+             (invader-fired? i (rest lom)))]))
 
 ;; Invader -> Invader
 ;; produce the next invader movig rigth INVADER-X-SPEED Pixel if (invader-dx i) is 1 or
@@ -236,9 +272,9 @@
 ;; edit the purpose more correct
 (define (next-invader i)
   (cond [ (hit-left-wall? i)
-         (make-invader (+ (invader-x i) INVADER-X-SPEED) (+ (invader-y i) INVADER-Y-SPEED)  1)]
+          (make-invader (+ (invader-x i) INVADER-X-SPEED) (+ (invader-y i) INVADER-Y-SPEED)  1)]
         [ (hit-right-wall? i)
-         (make-invader (- (invader-x i) INVADER-X-SPEED) (+ (invader-y i) INVADER-Y-SPEED) -1)]
+          (make-invader (- (invader-x i) INVADER-X-SPEED) (+ (invader-y i) INVADER-Y-SPEED) -1)]
         [(= (invader-dx i) 1)
          (make-invader (+ (invader-x i) INVADER-X-SPEED) (+ (invader-y i) INVADER-Y-SPEED)  1)]
         [else
