@@ -124,6 +124,9 @@
 (define G1 (make-game empty empty T1))
 (define G2 (make-game (list I1) (list M1) T1))
 (define G3 (make-game (list I1 I2) (list M1 M2) T1))
+(define G4 (make-game (list (make-invader 20 20 1) (make-invader 40 40 1) (make-invader 60 60 1))
+                      empty
+                      (make-tank 100 1)))
 
 ;; =================
 ;; Functions:
@@ -153,10 +156,8 @@
 (check-expect (tock (make-game (list (make-invader 150 100 1) (make-invader 150 200 1))
                                (list (make-missile 150 300) (make-missile 150 (+ 100 10)))
                                (make-tank 50 1)))
-              (make-game (list (make-invader (+ 150 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) 1)
-                               (make-invader (+ 150 INVADER-X-SPEED) (+ 200 INVADER-Y-SPEED) 1))
-                         (list (make-missile 150 (- 300 MISSILE-SPEED))
-                               (make-missile 150 (- 110 MISSILE-SPEED)))
+              (make-game (list (make-invader (+ 150 INVADER-X-SPEED) (+ 200 INVADER-Y-SPEED) 1))
+                         (list (make-missile 150 (- 300 MISSILE-SPEED)))
                          (make-tank (+ 50 TANK-SPEED) 1)))
           
                      
@@ -172,7 +173,7 @@
 
 (define (tock game)
   (make-game (next-loinvader (game-invaders game) (game-missiles game))
-             (next-lom (game-missiles game))
+             (next-lom (game-missiles game) (game-invaders game))
              (next-tank (game-tank game))))
 
 ;; ListOfInvaders ListOfMissile -> ListOfInvaders
@@ -186,7 +187,7 @@
 ;; if invader collision with missile invader dissapear(removed from the list)
 (check-expect (next-loinvader empty empty) empty)
 (check-expect (next-loinvader (list (make-invader 20 30 1)) empty)
-              (list (make-invader (+ 20 INVADER-X-SPEED) (+ 3 INVADER-Y-SPEED) 1)))
+              (list (make-invader (+ 20 INVADER-X-SPEED) (+ 30 INVADER-Y-SPEED) 1)))
 
 (check-expect (next-loinvader (list (make-invader 20 100 1) (make-invader 30  250 1)) empty)        
               (list (make-invader (+ 20 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) 1)         ;middle
@@ -217,11 +218,11 @@
               empty)
 
 (check-expect (next-loinvader (list (make-invader 50 200 1) (make-invader 20 100 1)) (list (make-missile 50 210)))
-              (list (make-invader 20 100 1)))
+              (list (make-invader (+ 20 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) 1)))
 
 (check-expect (next-loinvader (list (make-invader 50 200 1) (make-invader 20 100 1))  
                               (list (make-missile 50 210) (make-missile 18 102)))        ;double collision
-                              empty)
+              empty)
 
 ;(define (next-loinvader loi) empty) ;stub
 
@@ -231,7 +232,6 @@
   (cond [(empty? loi) empty]
         [else
          (if (invader-fired? (first loi) lom)
-             ;(next-invader (first (update-loi (first loi) loi)))
              (next-loinvader (rest loi) lom)
              (cons (next-invader (first loi))
                    (next-loinvader (rest loi) lom)))]))
@@ -302,23 +302,31 @@
 (define (hit-right-wall? i)
   (>= (invader-x i) (- WIDTH (/ (image-width INVADER) 2)) ))
 
-;; ListOfMissiles -> ListOfMissiles
+;; ListOfMissiles ListOfInvaders -> ListOfMissiles
 ;; produce a list with the next state of each missile; moving them MISSILE-SPEED pixel to top.
 ;; if missille hit invader the missile disappear
-(check-expect (next-lom empty) empty)
-(check-expect (next-lom (list (make-missile 10 200))) (list (make-missile 10 (- 200 MISSILE-SPEED))))
-(check-expect (next-lom (list (make-missile 10 200) (make-missile 20 100)))
+(check-expect (next-lom empty empty) empty)
+(check-expect (next-lom (list (make-missile 10 200)) (list (make-invader 10 50 1)))
+              (list (make-missile 10 (- 200 MISSILE-SPEED))))
+(check-expect (next-lom (list (make-missile 10 200) (make-missile 20 100)) (list (make-invader 10 20 1)))
               (list (make-missile 10 (- 200 MISSILE-SPEED)) (make-missile 20 (- 100 MISSILE-SPEED))))
+(check-expect (next-lom (list (make-missile 10 100)) (list (make-invader 10 90 1))) empty)
+(check-expect (next-lom (list (make-missile 30 100) (make-missile 40 200)) (list (make-invader 30 50 1) (make-invader 40 210 1)))
+              (list (make-missile 30 (- 100 MISSILE-SPEED))))
+(check-expect (next-lom (list (make-missile 30 100) (make-missile 40 200)) (list (make-invader 20 100 1) (make-invader 40 210 1)))
+              empty)
 
 
 ;(define (next-lom lom) lom) ;stub
 
 ;< template from LOM>
-(define (next-lom lom)
+(define (next-lom lom loi)
   (cond [(empty? lom) empty]
         [else 
-         (cons (next-missile (first lom))
-               (next-lom (rest lom)))]))
+         (if (missile-hit-loi? (first lom) loi)
+             (next-lom (rest lom) loi)
+             (cons (next-missile (first lom))
+                   (next-lom (rest lom) loi)))]))
 
 ;; Missile -> Missile
 ;; produce the next missile moving missile MISSILE-SPEED pixel to top.
@@ -552,3 +560,5 @@
 
 (define (move-tank-r t)
   (make-tank (tank-x t) 1))
+
+
