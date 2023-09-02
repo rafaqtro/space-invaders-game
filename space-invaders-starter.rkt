@@ -370,7 +370,7 @@
 ;(define (hit-invader? m i) false) ;stub
 
 (define (hit-invader? m i)
-  (<= 0 (distance m i) 10))
+  (<= 0 (distance m i) HIT-RANGE))
 
 ;; Missile Invader -> Number
 ;; caculate the distance between the center of missile-image (xm,ym) and invader-image(xi, yi)
