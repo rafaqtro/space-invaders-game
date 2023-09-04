@@ -136,9 +136,10 @@
 ;; start the world with ...
 ;; 
 (define (main game)
-  (big-bang game                   ; Game
-    (on-tick   tock)     ; Game -> Game
-    (to-draw   render)   ; Game -> Image
+  (big-bang game                ; Game
+    (on-tick   tock)            ; Game -> Game
+    (to-draw   render)          ; Game -> Image
+    (stop-when game-over?)      ; Game -> Boolean
     (on-key    handle-key)))    ; Game KeyEvent -> Game
 
 ;; Game -> Game
@@ -146,18 +147,20 @@
 ;; advance the missiles to up, advanced the invander to down and moving left ->  right
 ;; or right -> left
 #;(check-expect (tock G0) (make-game empty
-                                   empty
-                                   (make-tank (+ (/ WIDTH 2) TANK-SPEED) 1)))
+                                     empty
+                                     (make-tank (+ (/ WIDTH 2) TANK-SPEED) 1)))
 
 #;(check-expect (tock (make-game (list (make-invader 150 100 1)) (list (make-missile 150 300)) (make-tank 50 1)))
-              (make-game (list (make-invader (+ 150 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) 1))
-                         (list (make-missile  150 (- 300 MISSILE-SPEED)))
-                         (make-tank (+ 50 TANK-SPEED) 1)))
+                (make-game (list (make-invader (+ 150 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) 1))
+                           (list (make-missile  150 (- 300 MISSILE-SPEED)))
+                           (make-tank (+ 50 TANK-SPEED) 1)))
 
-#;(check-expect (tock (make-game (list (make-invader 150 100 1) (make-invader 150 200 1))
+(check-random (tock (make-game (list (make-invader 150 100 1) (make-invader 150 200 1))
                                (list (make-missile 150 300) (make-missile 150 (+ 100 10)))
                                (make-tank 50 1)))
-              (make-game (list (make-invader (+ 150 INVADER-X-SPEED) (+ 200 INVADER-Y-SPEED) 1))
+              (make-game (if (= (random INVADE-RATE) 99)
+                             (cons (new-invader WIDTH) (list (make-invader (+ 150 INVADER-X-SPEED) (+ 200 INVADER-Y-SPEED) 1)))
+                             (list (make-invader (+ 150 INVADER-X-SPEED) (+ 200 INVADER-Y-SPEED) 1)))
                          (list (make-missile 150 (- 300 MISSILE-SPEED)))
                          (make-tank (+ 50 TANK-SPEED) 1)))
           
@@ -173,25 +176,25 @@
              (next-tank (game-tank game))))
 (define (tock game)
   (make-game
-             (next-loinvader (if (= (random  INVADE-RATE)  99)
-                                 (cons (new-invader WIDTH) (game-invaders game))
-                                 (game-invaders game))
-                                 (game-missiles game))
-             (next-lom (game-missiles game) (game-invaders game))
-             (next-tank (game-tank game))))
+   (next-loinvader (if (= (random  INVADE-RATE)  99)
+                       (cons (new-invader WIDTH) (game-invaders game))
+                       (game-invaders game))
+                   (game-missiles game))
+   (next-lom (game-missiles game) (game-invaders game))
+   (next-tank (game-tank game))))
 
 ;; Number -> Invader
 ;; create a invader with x postion bt 0 and n
 (check-random (new-invader 200) (make-invader (random (- 200 (/ (image-width INVADER) 2)))
-                                                (/ (image-height INVADER) 2)
-                                                1))
+                                              (/ (image-height INVADER) 2)
+                                              1))
 
 
 ;(define (new-invader w) (make-invader 0 0 1)) ;stub
 
 (define (new-invader w) (make-invader (random (- w (/ (image-width INVADER) 2)))
-                                                (/ (image-height INVADER) 2)
-                                                1)) 
+                                      (/ (image-height INVADER) 2)
+                                      1)) 
 
 ;; ListOfInvaders ListOfMissile -> ListOfInvaders
 ;; produce the next state of each invaders in the list
@@ -204,42 +207,42 @@
 ;; if invader collision with missile invader dissapear(removed from the list)
 #;(check-expect (next-loinvader empty empty) empty)
 #;(check-expect (next-loinvader (list (make-invader 20 30 1)) empty)
-              (list (make-invader (+ 20 INVADER-X-SPEED) (+ 30 INVADER-Y-SPEED) 1)))
+                (list (make-invader (+ 20 INVADER-X-SPEED) (+ 30 INVADER-Y-SPEED) 1)))
 
 #;(check-expect (next-loinvader (list (make-invader 20 100 1) (make-invader 30  250 1)) empty)        
-              (list (make-invader (+ 20 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) 1)         ;middle
-                    (make-invader (+ 30 INVADER-X-SPEED) (+ 250 INVADER-Y-SPEED) 1)))
+                (list (make-invader (+ 20 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) 1)         ;middle
+                      (make-invader (+ 30 INVADER-X-SPEED) (+ 250 INVADER-Y-SPEED) 1)))
 
 #;(check-expect (next-loinvader (list (make-invader 50 200 1) (make-invader 30 (- HEIGHT 10)  1))
-                              (list (make-missile 20 300)))
-              (list (make-invader (+ 50 INVADER-X-SPEED) (+ 200 INVADER-Y-SPEED) 1)
-                    (make-invader (+ 30 INVADER-X-SPEED) (+ (- HEIGHT 10) INVADER-Y-SPEED) 1)))      ;reach bottom
+                                (list (make-missile 20 300)))
+                (list (make-invader (+ 50 INVADER-X-SPEED) (+ 200 INVADER-Y-SPEED) 1)
+                      (make-invader (+ 30 INVADER-X-SPEED) (+ (- HEIGHT 10) INVADER-Y-SPEED) 1)))      ;reach bottom
 #;(check-expect (next-loinvader (list (make-invader 20 100 -1) (make-invader 30  150 -1))
-                              (list (make-missile 20 300)))        
-              (list (make-invader (- 20 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) -1)                     ;to left
-                    (make-invader (- 30 INVADER-X-SPEED) (+ 150 INVADER-Y-SPEED) -1)))
+                                (list (make-missile 20 300)))        
+                (list (make-invader (- 20 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) -1)                     ;to left
+                      (make-invader (- 30 INVADER-X-SPEED) (+ 150 INVADER-Y-SPEED) -1)))
 #;(check-expect (next-loinvader (list (make-invader 20 100 1)
-                                    (make-invader (- WIDTH (/ (image-width INVADER) 2)) 150 1))
-                              (list (make-missile 20 300)))
-              (list (make-invader (+ 20 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) 1)                   ; reach right wall
-                    (make-invader (-  (- WIDTH (/ (image-width INVADER) 2)) INVADER-X-SPEED)
-                                  (+ 150 INVADER-Y-SPEED) -1)))
+                                      (make-invader (- WIDTH (/ (image-width INVADER) 2)) 150 1))
+                                (list (make-missile 20 300)))
+                (list (make-invader (+ 20 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) 1)                   ; reach right wall
+                      (make-invader (-  (- WIDTH (/ (image-width INVADER) 2)) INVADER-X-SPEED)
+                                    (+ 150 INVADER-Y-SPEED) -1)))
 
 #;(check-expect (next-loinvader (list (make-invader 20 100 1)
-                                    (make-invader (+ (- WIDTH (/ (image-width INVADER) 2)) 2) 150 1))
-                              (list (make-missile 30 400)))
-              (list (make-invader (+ 20 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) 1)                   ; pass right wall
-                    (make-invader (- (+ (- WIDTH (/ (image-width INVADER) 2)) 2) INVADER-X-SPEED)
-                                  (+ 150 INVADER-Y-SPEED) -1)))
+                                      (make-invader (+ (- WIDTH (/ (image-width INVADER) 2)) 2) 150 1))
+                                (list (make-missile 30 400)))
+                (list (make-invader (+ 20 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) 1)                   ; pass right wall
+                      (make-invader (- (+ (- WIDTH (/ (image-width INVADER) 2)) 2) INVADER-X-SPEED)
+                                    (+ 150 INVADER-Y-SPEED) -1)))
 #;(check-expect (next-loinvader (list (make-invader 50 200 1)) (list (make-missile 40 200)))     ; collison missile invader
-              empty)
+                empty)
 
 #;(check-expect (next-loinvader (list (make-invader 50 200 1) (make-invader 20 100 1)) (list (make-missile 50 210)))
-              (list (make-invader (+ 20 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) 1)))
+                (list (make-invader (+ 20 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) 1)))
 
 #;(check-expect (next-loinvader (list (make-invader 50 200 1) (make-invader 20 100 1))  
-                              (list (make-missile 50 210) (make-missile 18 102)))        ;double collision
-              empty)
+                                (list (make-missile 50 210) (make-missile 18 102)))        ;double collision
+                empty)
 
 ;(define (next-loinvader loi) empty) ;stub
 
@@ -520,6 +523,55 @@
 (define (render-tank t)
   (place-image TANK (tank-x t) TANK-Y BACKGROUND))
 
+;; Game -> Boolean
+;; produce true if one invader landed at the bottom
+(check-expect (game-over? G2) false)
+(check-expect (game-over? (make-game (list (make-invader 200 100 1) (make-invader 200 150 1)) empty (make-tank 100 1)))
+              false)
+(check-expect (game-over? (make-game (list (make-invader 200 100 1)
+                                           (make-invader 200 (- HEIGHT (/ (image-height INVADER)2)) 1))
+                                     empty (make-tank 100 1)))
+              true)
+(check-expect (game-over? (make-game (list (make-invader 200 100 1)
+                                           (make-invader 200 (+ (- HEIGHT (/ (image-height INVADER)2)) 3) 1))
+                                     (list (make-missile 20 100)) (make-tank 100 1)))
+              true)
+
+;(define (game-over? g) false) ;stub
+
+(define (game-over? g)
+  (invaders-landed? (game-invaders g)))
+
+;;ListOfInvaders -> Boolean
+;; produce true if one invader in lit touch/landed the bottom
+(check-expect (invaders-landed? empty) false)
+(check-expect (invaders-landed? (list (make-invader 100 100 1) (make-invader 200 200 -1))) false)
+(check-expect (invaders-landed? (list (make-invader 100 120 1)
+                                      (make-invader 20 (- HEIGHT (/ (image-height INVADER)2)) 1)))
+              true)
+(check-expect (invaders-landed? (list (make-invader 100 120 1)
+                                      (make-invader 20 (+ (- HEIGHT (/ (image-height INVADER)2)) 2) 1)))
+              true)
+
+;(define (invaders-landed? loi) false) ;stub
+
+(define (invaders-landed? loi)
+  (cond [(empty? loi) false]
+        [else
+         (if (landed? (first loi))
+             true
+             (invaders-landed? (rest loi)))]))
+
+;; Invader -> Boolean
+;; produce true if invader landed
+(check-expect (landed? (make-invader 10 50 1)) false)
+(check-expect (landed? (make-invader 20 (- HEIGHT (/ (image-height INVADER)2)) 1)) true)
+(check-expect (landed? (make-invader 20 (+ (- HEIGHT (/ (image-height INVADER)2)) 2) 1)) true)
+
+;(define (landed? i) false) ;stub
+
+(define (landed? i)
+  (>= (+ (invader-y i) (/ (image-height INVADER) 2)) HEIGHT))
 
 ;; Game ke -> Game
 ;; if " " is pressed the missile is fire, if left-arrow key is pressed the tankm move to the left
