@@ -343,10 +343,21 @@
 (define (next-lom lom loi)
   (cond [(empty? lom) empty]
         [else 
-         (if (missile-hit-loi? (first lom) loi)
+         (if (or (missile-hit-loi? (first lom) loi)
+                 (missile-out? (first lom)))
              (next-lom (rest lom) loi)
              (cons (next-missile (first lom))
                    (next-lom (rest lom) loi)))]))
+;; Missile -> Boolean
+;; prouduce true if missile is out of the BACKGROUND(pass the top of background image)
+(check-expect (missile-out? (make-missile 100 100)) false)
+(check-expect (missile-out? (make-missile 100 0)) false)
+(check-expect (missile-out? (make-missile 100 (- 0 (+ (/ (image-height MISSILE) 2) 2)))) true)
+
+;(define (missile-out? m) false) ;stub
+
+(define (missile-out? m)
+  (< (+ (missile-y m) (/ (image-height MISSILE) 2)) 0)) 
 
 ;; Missile -> Missile
 ;; produce the next missile moving missile MISSILE-SPEED pixel to top.
