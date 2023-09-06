@@ -146,12 +146,15 @@
 ;; produce the next game state, adavanced tank to left or rigth(-1,1),
 ;; advance the missiles to up, advanced the invander to down and moving left ->  right
 ;; or right -> left
-#;(check-expect (tock G0) (make-game empty
+
+(check-expect (tock G0) (make-game   empty
                                      empty
                                      (make-tank (+ (/ WIDTH 2) TANK-SPEED) 1)))
 
-#;(check-expect (tock (make-game (list (make-invader 150 100 1)) (list (make-missile 150 300)) (make-tank 50 1)))
-                (make-game (list (make-invader (+ 150 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) 1))
+(check-random (tock (make-game (list (make-invader 150 100 1)) (list (make-missile 150 300)) (make-tank 50 1)))
+                (make-game (if (= (random INVADE-RATE) 99)
+                           (cons (new-invader WIDTH) (list (make-invader (+ 150 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) 1))) 
+                           (list (make-invader (+ 150 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) 1)))
                            (list (make-missile  150 (- 300 MISSILE-SPEED)))
                            (make-tank (+ 50 TANK-SPEED) 1)))
 
