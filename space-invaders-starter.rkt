@@ -45,7 +45,6 @@
 ;; Game is (make-game  (listof Invader) (listof Missile) Tank)
 ;; interp. the current state of a space invaders game
 ;;         with the current invaders, missiles and tank position
-
 ;; Game constants defined below Missile data definition
 
 #;
@@ -68,8 +67,6 @@
 (define (fn-for-tank t)
   (... (tank-x t) (tank-dir t)))
 
-
-
 (define-struct invader (x y dx))
 ;; Invader is (make-invader Number Number Number)
 ;; interp. the invader is at (x, y) in screen coordinates
@@ -81,7 +78,9 @@
 
 #;
 (define (fn-for-invader invader)
-  (... (invader-x invader) (invader-y invader) (invader-dx invader)))
+  (... (invader-x invader)
+       (invader-y invader)
+       (invader-dx invader)))
 
 ;; ListOfInvaders is one of:
 ;; empty
@@ -103,7 +102,7 @@
 ;; Missile is (make-missile Number Number)
 ;; interp. the missile's location is x y in screen coordinates
 
-(define M1 (make-missile 150 300))                       ;not hit U1
+(define M1 (make-missile 150 300))                               ;not hit U1
 (define M2 (make-missile (invader-x I1) (+ (invader-y I1) 10)))  ;exactly hit U1
 (define M3 (make-missile (invader-x I1) (+ (invader-y I1)  5)))  ;> hit U1
 
@@ -114,7 +113,7 @@
 ;; ListOfMissiles is one of:
 ;; - empty
 ;; - (cond Missile ListOfMissiles)
-;; intper. represent a list of missiles
+;; interp. represent a list of missiles
 
 (define LM0 empty)
 (define LM1 (cons M1 empty))
@@ -143,20 +142,20 @@
     (on-key    handle-key)))    ; Game KeyEvent -> Game
 
 ;; Game -> Game
-;; produce the next game state, adavanced tank to left or rigth(-1,1),
-;; advance the missiles to up, advanced the invander to down and moving left ->  right
-;; or right -> left
+;; produce the next game state, adavanced tank to left or rigth(-1,1)
+;; advance the invanders to down and moving left ->  right or right -> left
+;; advance the missiles to up.
 
 (check-expect (tock G0) (make-game   empty
                                      empty
                                      (make-tank (+ (/ WIDTH 2) TANK-SPEED) 1)))
 
 (check-random (tock (make-game (list (make-invader 150 100 1)) (list (make-missile 150 300)) (make-tank 50 1)))
-                (make-game (if (= (random INVADE-RATE) 99)
-                           (cons (new-invader WIDTH) (list (make-invader (+ 150 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) 1))) 
-                           (list (make-invader (+ 150 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) 1)))
-                           (list (make-missile  150 (- 300 MISSILE-SPEED)))
-                           (make-tank (+ 50 TANK-SPEED) 1)))
+              (make-game (if (= (random INVADE-RATE) 99)
+                             (cons (new-invader WIDTH) (list (make-invader (+ 150 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) 1))) 
+                             (list (make-invader (+ 150 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) 1)))
+                         (list (make-missile  150 (- 300 MISSILE-SPEED)))
+                         (make-tank (+ 50 TANK-SPEED) 1)))
 
 (check-random (tock (make-game (list (make-invader 150 100 1) (make-invader 150 200 1))
                                (list (make-missile 150 300) (make-missile 150 (+ 100 10)))
@@ -167,16 +166,9 @@
                          (list (make-missile 150 (- 300 MISSILE-SPEED)))
                          (make-tank (+ 50 TANK-SPEED) 1)))
           
-                     
 ;(define (tock game) game) ;stub
-
 ;<template used from game>
 
-#;
-(define (tock game)
-  (make-game (next-loinvader (game-invaders game))
-             (next-lom (game-missiles game))
-             (next-tank (game-tank game))))
 (define (tock game)
   (make-game
    (next-loinvader (if (= (random  INVADE-RATE)  99)
@@ -187,11 +179,10 @@
    (next-tank (game-tank game))))
 
 ;; Number -> Invader
-;; create a invader with x postion bt 0 and n
+;; create a invader with x postion between 0 and n
 (check-random (new-invader 200) (make-invader (random (- 200 (/ (image-width INVADER) 2)))
                                               (/ (image-height INVADER) 2)
                                               1))
-
 
 ;(define (new-invader w) (make-invader 0 0 1)) ;stub
 
@@ -201,13 +192,13 @@
 
 ;; ListOfInvaders ListOfMissile -> ListOfInvaders
 ;; produce the next state of each invaders in the list
-;; advanced on x INVADER-X-SPEED  pixel to left if (invader-dx i) is -1 or
+;; advancing on x INVADER-X-SPEED  pixel to left if (invader-dx i) is -1 or
 ;; to right if (invader-dx i) is 1
 ;; and on y INVADER-Y-SPEED pixel to bottom
 ;; if hit the wall they will bounce off and continue in the other direction
 ;; hit right wall go to left
 ;; hit left wall go to right
-;; if invader collision with missile invader dissapear(removed from the list)
+;; if invader collision with missile, invader dissapear(removed from the list)
 #;(check-expect (next-loinvader empty empty) empty)
 #;(check-expect (next-loinvader (list (make-invader 20 30 1)) empty)
                 (list (make-invader (+ 20 INVADER-X-SPEED) (+ 30 INVADER-Y-SPEED) 1)))
@@ -290,9 +281,7 @@
 
 ;(define (next-invader i) i) ;stub
 ; <Template used from INVADER>
-;; !!!
-;; modify the function to check hit boundaries
-;; edit the purpose more correct
+
 (define (next-invader i)
   (cond [ (hit-left-wall? i)
           (make-invader (+ (invader-x i) INVADER-X-SPEED) (+ (invader-y i) INVADER-Y-SPEED)  1)]
@@ -306,8 +295,8 @@
 ;; Invader -> Boolean
 ;; produce true is invader hit or pass the left wall (0 or < 0)
 (check-expect (hit-left-wall? (make-invader 30 100 1)) false)
-(check-expect (hit-left-wall? (make-invader (/ (image-width INVADER) 2) 100 -1)) true) ; reach the wall
-(check-expect (hit-left-wall? (make-invader (- (/ (image-width INVADER) 2) 3) 100 -1)) true) ;pass the wall 
+(check-expect (hit-left-wall? (make-invader (/ (image-width INVADER) 2) 100 -1)) true)       ; reach the wall
+(check-expect (hit-left-wall? (make-invader (- (/ (image-width INVADER) 2) 3) 100 -1)) true) ; pass the wall 
                               
 ;(define (hit-left-wall? i) false) ;stub
 
@@ -317,8 +306,8 @@
 ;; Invader -> Boolean
 ;; produce true is invader hit or pass the right wall (WIDTH or > WIDTH)
 (check-expect (hit-right-wall? (make-invader 100 150 1)) false)
-(check-expect (hit-right-wall? (make-invader (- WIDTH (/ (image-width INVADER) 2)) 150 1)) true)
-(check-expect (hit-right-wall? (make-invader (+ (- WIDTH (/ (image-width INVADER) 2)) 3) 150 1)) true)
+(check-expect (hit-right-wall? (make-invader (- WIDTH (/ (image-width INVADER) 2)) 150 1)) true)       ; reach the wall
+(check-expect (hit-right-wall? (make-invader (+ (- WIDTH (/ (image-width INVADER) 2)) 3) 150 1)) true) ; pass the wall
 
 ;(define (hit-right-wall? i) false) ;stub
 
@@ -339,10 +328,9 @@
 (check-expect (next-lom (list (make-missile 30 100) (make-missile 40 200)) (list (make-invader 20 100 1) (make-invader 40 210 1)))
               empty)
 
-
 ;(define (next-lom lom) lom) ;stub
-
 ;< template from LOM>
+
 (define (next-lom lom loi)
   (cond [(empty? lom) empty]
         [else 
@@ -351,6 +339,7 @@
              (next-lom (rest lom) loi)
              (cons (next-missile (first lom))
                    (next-lom (rest lom) loi)))]))
+
 ;; Missile -> Boolean
 ;; prouduce true if missile is out of the BACKGROUND(pass the top of background image)
 (check-expect (missile-out? (make-missile 100 100)) false)
@@ -370,7 +359,6 @@
 (check-expect (next-missile (make-missile 60   9)) (make-missile 60 (-   9 MISSILE-SPEED)))
 
 ;(define (next-missile m) m); stub
-
 ;< template from missile>
 
 (define (next-missile m)
@@ -395,6 +383,7 @@
 
 ;; Missile Invader -> Boolean
 ;; produce true if missile hit invader
+;; the distance between the two is <= HIT-RANGE
 (check-expect (hit-invader? (make-missile 30  40) (make-invader 20 100 1)) false)
 (check-expect (hit-invader? (make-missile 30 100) (make-invader 40 100 1)) true)
 (check-expect (hit-invader? (make-missile 30 100) (make-invader 30  90 1)) true)
@@ -416,7 +405,8 @@
 ;(define (distance m i) 0); stub
 
 (define (distance m i)
-  (sqrt (+ (sqr (- (invader-x i) (missile-x m))) (sqr (- (invader-y i) (missile-y m))))))
+  (sqrt (+ (sqr (- (invader-x i) (missile-x m)))
+           (sqr (- (invader-y i) (missile-y m))))))
 
 
 ;; Tank -> Tank
@@ -428,10 +418,7 @@
 (check-expect (next-tank (make-tank 290  1)) (make-tank (+ 290 TANK-SPEED)  1))
 (check-expect (next-tank (make-tank 290 -1)) (make-tank (- 290 TANK-SPEED) -1))
 
-
-
 ;(define (next-tank t) t) ;stub
-
 
 (define (next-tank t)
   (cond [ (= (tank-dir t)  1) (make-tank (+ (tank-x t) TANK-SPEED) (tank-dir t))]
@@ -458,7 +445,6 @@
                                                                   (place-image TANK 50 TANK-Y BACKGROUND))))))
 
 ;(define (render game) BACKGROUND) ;stub
-
 ;< template from Game>
 
 (define (render s)
@@ -475,7 +461,6 @@
               (place-image INVADER 150 100 (place-image INVADER 150 HEIGHT BACKGROUND)))
 1
 ;(define (render-loinvader loi img) img) ;stub
-
 ; < template from loi>
 
 (define (render-loinvader loi img)
@@ -494,7 +479,6 @@
 (define (render-invader i img)
   (place-image INVADER (invader-x i) (invader-y i) img)) 
 
-
 ;; ListOfMissile Image -> Image
 ;; render each missile on ListOfMissile on to Img
 (check-expect (render-lomissile empty BACKGROUND) BACKGROUND)
@@ -502,7 +486,6 @@
               (place-image MISSILE 150 300 (place-image MISSILE 150 110 BACKGROUND))) 
 
 ;(define (render-lom lom img) img) ;stub
-
 ;< template from lom>
 
 (define (render-lomissile lom img)
@@ -511,14 +494,12 @@
          (render-missile (first lom) 
                          (render-lomissile (rest lom) img))]))
 
-
 ;; Missile -> Image
 ;; render missile on apprpriate place on to img
 (check-expect (render-missile (make-missile 150 300) BACKGROUND) (place-image MISSILE 150 300 BACKGROUND))
 (check-expect (render-missile (make-missile 150 110) BACKGROUND) (place-image MISSILE 150 110 BACKGROUND))
  
 ;(define (render-missile m img) img) ;stub
-
 ;<template from missile>
 
 (define (render-missile m img)
@@ -531,7 +512,6 @@
 (check-expect (render-tank (make-tank 200 TANK-Y)) (place-image TANK 200 TANK-Y BACKGROUND))
 
 ;(define (render-tank t) BACKGROUND) ;stub
-
 ;<template from tank>
 
 (define (render-tank t)
@@ -579,7 +559,7 @@
 ;; Invader -> Boolean
 ;; produce true if invader landed
 (check-expect (landed? (make-invader 10 50 1)) false)
-(check-expect (landed? (make-invader 20 (- HEIGHT (/ (image-height INVADER)2)) 1)) true)
+(check-expect (landed? (make-invader 20 (- HEIGHT (/ (image-height INVADER)2)) 1))       true)
 (check-expect (landed? (make-invader 20 (+ (- HEIGHT (/ (image-height INVADER)2)) 2) 1)) true)
 
 ;(define (landed? i) false) ;stub
@@ -590,7 +570,7 @@
 ;; Game ke -> Game
 ;; if " " is pressed the missile is fire, if left-arrow key is pressed the tankm move to the left
 ;; if right arrow key is pressed the tank move to the right
-(check-expect (handle-key (make-game empty empty (make-tank 100 1)) "left")
+(check-expect (handle-key (make-game empty empty (make-tank 100  1))  "left")
               (make-game empty empty (make-tank 100 -1)))
 (check-expect (handle-key (make-game empty empty (make-tank 100 -1)) "right")
               (make-game empty empty (make-tank 100 1)))
@@ -616,7 +596,6 @@
               (list (make-missile 150 (- HEIGHT (image-height TANK))) (make-missile 80 100))) 
 
 ;(define (shot-missile lom t) lom) ;stub
-
 ;<template from lom>
 
 (define (shot-missile lom t)
@@ -624,7 +603,6 @@
         [else 
          (cons (make-missile (tank-x t) (- HEIGHT (image-height TANK)))
                lom)]))
-
 
 ;; Tank -> Tank
 ;; change dir of tank to left 
@@ -643,5 +621,3 @@
 
 (define (move-tank-r t)
   (make-tank (tank-x t) 1))
-
-
