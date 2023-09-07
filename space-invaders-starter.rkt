@@ -199,47 +199,46 @@
 ;; hit right wall go to left
 ;; hit left wall go to right
 ;; if invader collision with missile, invader dissapear(removed from the list)
-#;(check-expect (next-loinvader empty empty) empty)
-#;(check-expect (next-loinvader (list (make-invader 20 30 1)) empty)
+(check-expect (next-loinvader empty empty) empty)
+(check-expect (next-loinvader (list (make-invader 20 30 1)) empty)
                 (list (make-invader (+ 20 INVADER-X-SPEED) (+ 30 INVADER-Y-SPEED) 1)))
 
-#;(check-expect (next-loinvader (list (make-invader 20 100 1) (make-invader 30  250 1)) empty)        
-                (list (make-invader (+ 20 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) 1)         ;middle
+(check-expect (next-loinvader (list (make-invader 20 100 1) (make-invader 30  250 1)) empty)        
+                (list (make-invader (+ 20 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) 1)                 ;middle
                       (make-invader (+ 30 INVADER-X-SPEED) (+ 250 INVADER-Y-SPEED) 1)))
 
-#;(check-expect (next-loinvader (list (make-invader 50 200 1) (make-invader 30 (- HEIGHT 10)  1))
+(check-expect (next-loinvader (list (make-invader 50 200 1) (make-invader 30 (- HEIGHT 10)  1))
                                 (list (make-missile 20 300)))
                 (list (make-invader (+ 50 INVADER-X-SPEED) (+ 200 INVADER-Y-SPEED) 1)
                       (make-invader (+ 30 INVADER-X-SPEED) (+ (- HEIGHT 10) INVADER-Y-SPEED) 1)))      ;reach bottom
-#;(check-expect (next-loinvader (list (make-invader 20 100 -1) (make-invader 30  150 -1))
+(check-expect (next-loinvader (list (make-invader 20 100 -1) (make-invader 30  150 -1))
                                 (list (make-missile 20 300)))        
-                (list (make-invader (- 20 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) -1)                     ;to left
+                (list (make-invader (- 20 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) -1)                  ;to left
                       (make-invader (- 30 INVADER-X-SPEED) (+ 150 INVADER-Y-SPEED) -1)))
-#;(check-expect (next-loinvader (list (make-invader 20 100 1)
+(check-expect (next-loinvader (list (make-invader 20 100 1)
                                       (make-invader (- WIDTH (/ (image-width INVADER) 2)) 150 1))
                                 (list (make-missile 20 300)))
-                (list (make-invader (+ 20 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) 1)                   ; reach right wall
+                (list (make-invader (+ 20 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) 1)                    ;reach right wall
                       (make-invader (-  (- WIDTH (/ (image-width INVADER) 2)) INVADER-X-SPEED)
                                     (+ 150 INVADER-Y-SPEED) -1)))
 
-#;(check-expect (next-loinvader (list (make-invader 20 100 1)
+(check-expect (next-loinvader (list (make-invader 20 100 1)
                                       (make-invader (+ (- WIDTH (/ (image-width INVADER) 2)) 2) 150 1))
                                 (list (make-missile 30 400)))
-                (list (make-invader (+ 20 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) 1)                   ; pass right wall
+                (list (make-invader (+ 20 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) 1)                    ;pass right wall
                       (make-invader (- (+ (- WIDTH (/ (image-width INVADER) 2)) 2) INVADER-X-SPEED)
                                     (+ 150 INVADER-Y-SPEED) -1)))
-#;(check-expect (next-loinvader (list (make-invader 50 200 1)) (list (make-missile 40 200)))     ; collison missile invader
+(check-expect (next-loinvader (list (make-invader 50 200 1)) (list (make-missile 40 200)))               ;collison missile invader
                 empty)
 
-#;(check-expect (next-loinvader (list (make-invader 50 200 1) (make-invader 20 100 1)) (list (make-missile 50 210)))
+(check-expect (next-loinvader (list (make-invader 50 200 1) (make-invader 20 100 1)) (list (make-missile 50 210)))
                 (list (make-invader (+ 20 INVADER-X-SPEED) (+ 100 INVADER-Y-SPEED) 1)))
 
-#;(check-expect (next-loinvader (list (make-invader 50 200 1) (make-invader 20 100 1))  
-                                (list (make-missile 50 210) (make-missile 18 102)))        ;double collision
+(check-expect (next-loinvader (list (make-invader 50 200 1) (make-invader 20 100 1))  
+                                (list (make-missile 50 210) (make-missile 18 102)))                      ;double collision
                 empty)
 
 ;(define (next-loinvader loi) empty) ;stub
-
 ;<template took from LOI>
 
 (define (next-loinvader loi lom)
