@@ -458,7 +458,7 @@
               (place-image INVADER 150 200 BACKGROUND))
 (check-expect (render-loinvader (list (make-invader 150 100 1) (make-invader 150 HEIGHT -1)) BACKGROUND)
               (place-image INVADER 150 100 (place-image INVADER 150 HEIGHT BACKGROUND)))
-1
+
 ;(define (render-loinvader loi img) img) ;stub
 ; < template from loi>
 
